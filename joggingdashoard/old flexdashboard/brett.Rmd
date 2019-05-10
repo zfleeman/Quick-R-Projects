@@ -1,0 +1,40 @@
+---
+title: "Calories Burned"
+author: "Brett Whisler"
+date: "September 26, 2016"
+output: html_document
+---
+
+```{r}
+# Personal inputs
+age <- 27
+weight <- 169 # in Pounds
+heart_rate <- 152
+duration_of_activity <- 32.25 # in minutes
+MET_value <- 12 #running, 7 mph (8.5 min/mile) # there is a table of these values we can leverage
+```
+
+### Calories Burned equation 1
+
+This equation takes into account age, body weight, heart rate, duration of activity.
+source:http://fitnowtraining.com/2012/01/formula-for-calories-burned/
+
+```{r}
+# calories burned equation
+Calories_Burned<-(((age*0.2017)-(weight*0.09036)+(heart_rate*0.6309)-55.0969)*duration_of_activity)/4.184
+Calories_Burned
+```
+
+## Calories Burned equation 2
+
+This equation uses MET (Metabolic Equivalent) values 
+sources: http://golf.procon.org/view.resource.php?resourceID=004786
+http://www.mhhe.com/hper/physed/clw/webreview/web07/tsld007.htm
+https://www.hss.edu/conditions_burning-calories-with-exercise-calculating-estimated-energy-expenditure.asp
+
+```{r}
+# calories burned MET equation
+#Calories = METS x weight (kg) x time (hours) 
+calories_burned_MET<-MET_value*(weight/2.2)*(duration_of_activity/60)
+calories_burned_MET
+```

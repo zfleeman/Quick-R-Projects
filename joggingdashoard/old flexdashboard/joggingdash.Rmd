@@ -1,0 +1,104 @@
+---
+title: "Zach Fleeman's Jogging Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+    css: style.css
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(ggplot2)
+
+miles <- read.csv("https://docs.google.com/spreadsheets/d/1xe4rePemIs319-zKM49bO5eE5CVeacOjhSwpF7IgfH0/pub?output=csv", stringsAsFactors = FALSE)
+miles$Day <- as.Date(miles$Day, "%m/%d/%Y")
+miles$Minutes <- miles$Minutes + (miles$Seconds/60)
+miles$permile <- miles$Minutes/miles$Distance..miles.
+miles$permile_char <- paste(floor(miles$permile),":",ifelse(100 - floor((miles$permile - floor(miles$permile))*60) > 90,"0",""), floor((miles$permile - floor(miles$permile))*60), sep="")
+miles$month <- as.Date(cut(miles$Day, breaks = "1 month"))
+miles <- miles[order(miles$Day, decreasing = TRUE),]
+colnames(miles) <- c("Timestamp","Date","Time","Miles","Minutes","Seconds","Rating","Location", "HR","Per.Mile.Decimal","Per.Mile","month")
+miles$Minutes <- round(miles$Minutes, digits = 2)
+miles <- subset(miles, Miles !=0)
+row.names(miles) <- NULL
+miles$Day <- as.character(miles$Date, "%b %d, %Y")
+
+monthly_plot <- subset(miles, month > Sys.Date() - 365)
+
+monthagg <- aggregate(data = monthly_plot, Miles ~ month, FUN = "sum")
+currMonthMiles <- monthagg$Miles[nrow(monthagg)]
+
+#    MILE CALCS
+thisweek <- subset(miles, Date >= Sys.Date() - 7)
+thisweekmiles <- sum(thisweek$Miles)
+thisweekstatus <- ifelse(thisweekmiles < 12, "red", "green")
+thisweekicon <- ifelse(thisweekstatus == "red", "fa-thumbs-o-down", "fa-thumbs-o-up")
+
+#    MOOD CALCS
+thisweekmood <- mean(thisweek$Rating)
+moodicon <- ifelse(thisweekmood >= 3.5, "fa-smile-o", ifelse(thisweekmood < 3.5 & thisweekmood > 2.5, "fa-meh-o", "frown-o"))
+moodstatus <- ifelse(thisweekmood >= 3.5, "green", ifelse(thisweekmood < 3.5 & thisweekmood > 2.5, "orange", "red"))
+
+#    PER MILE CALCS
+avgpermile <- mean(thisweek$Per.Mile.Decimal)
+avgpermile_readable <- paste(floor(avgpermile),":",ifelse(100 - floor((avgpermile - floor(avgpermile))*60) > 90,"0",""), floor((avgpermile - floor(avgpermile))*60), sep="")
+#permileicon <- ifelse(avgpermile <= 8.5, "smile-o", ifelse(avgpermile < 9 & avgpermile > 8.5, "meh-o", "frown-o"))
+permilestatus <- ifelse(avgpermile <= 8.5, "green", ifelse(avgpermile < 9 & avgpermile > 8.5, "orange", "red"))
+
+#zipcodes <- read.csv("https://gist.githubusercontent.com/erichurst/7882666/raw/5bdc46db47d9515269ab12ed6fb2850377fd869e/US%2520Zip%2520Codes%2520from%25202013%2520Government%2520Data")
+
+
+
+weather <- read.csv(paste("https://www.wunderground.com/history/airport/KMKC/",as.character(Sys.Date(),format="%Y"), "/",as.character(Sys.Date(),format="%m"), "/",as.character(Sys.Date(),format="%d"), "/","DailyHistory.html?format=1",sep = ""))
+```
+
+Column {.sidebar data-width=700 data-padding=10}
+----------------------------------
+
+```{r}
+ggplot(data = monthly_plot, aes(x = month, y = Miles)) + stat_summary(fun.y = "sum", geom = "bar") + labs(title="Miles Jogged per Month // One Year", x = "", y = "Miles") + scale_x_date(date_breaks = "1 month", date_labels = "%b '%y") + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+Row
+-----------------
+
+### miles jogged this month.
+`r valueBox(currMonthMiles, icon = "fa-calendar")`
+
+### miles jogged in the past 7 days.
+`r valueBox(thisweekmiles, icon = thisweekicon, color = thisweekstatus)`
+
+### average jog rating /5 in the past 7 days.
+`r valueBox(thisweekmood, icon = moodicon, color = moodstatus)`
+
+### average per-mile pace in the past 7 days.
+`r valueBox(avgpermile_readable, icon = "fa-clock-o", color = permilestatus)`
+
+
+Row
+------------------
+
+### Rolling 30 Runs
+
+```{r}
+knitr::kable(head(miles[,c("Day","Miles","Minutes","Per.Mile","Rating","Location")],30))
+```
+
+Row
+------------------
+
+### Speed vs Mood Chart Rolling 30 Days
+
+```{r}
+mood <- subset(miles, Date > Sys.Date()-30 & Miles != 0 & !is.na(Per.Mile.Decimal))
+par(mar = c(5,5,2,5))
+plot(mood$Date, mood$Per.Mile.Decimal, type = "l", col = "blue", xlab = "", ylab = "Minutes Per Mile")
+par(new=T)
+plot(mood$Date,mood$Rating, type = "l", col = "red", ylab = "", xlab = "", axes=F)
+axis(side = 4, at = c(1,2,3,4,5))
+mtext(side = 4, line = 3, 'Run Rating')
+legend("topleft", legend = c("Per Mile", "Raiting"),col = c("blue","red"), lty=c(1,1))
+```
+
