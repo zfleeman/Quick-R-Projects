@@ -1,0 +1,9 @@
+name: run_cals
+account: zfleeman
+server: shinyapps.io
+appId: 128651
+bundleId: 572612
+url: https://zfleeman.shinyapps.io/run_cals/
+when: 1475200425.74431
+asMultiple: FALSE
+asStatic: FALSE

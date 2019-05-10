@@ -1,0 +1,9 @@
+name: tweetsentiment
+account: zfleeman
+server: shinyapps.io
+appId: 130691
+bundleId: 581760
+url: https://zfleeman.shinyapps.io/tweetsentiment/
+when: 1476066763.24716
+asMultiple: FALSE
+asStatic: FALSE
